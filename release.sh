@@ -9,7 +9,7 @@ fi
 MANIFEST='src/manifest.json'
 NEXT="$(jq '.version = (.version|tonumber|.+1|tostring)' "$MANIFEST")"
 echo "$NEXT" > "$MANIFEST"
-VERSION = "$(jq -r .version "$MANIFEST")"
+VERSION="$(jq -r .version "$MANIFEST")"
 
 npm run clean
 npm run lint
