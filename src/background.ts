@@ -1,5 +1,3 @@
-declare const chrome: typeof browser; // Chrome vs Firefox compat
-
 /** Utility that holds a value and tells its subscribers when the value changes. */
 class Signal<T> {
   #value: T | undefined;
@@ -52,6 +50,7 @@ chrome.webRequest.onBeforeRequest.addListener(
         // If it's not valid JSON, it's probably not a URL we care about
       }
     }
+    return {};
   },
   {
     types: ["xmlhttprequest"],

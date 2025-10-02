@@ -1,5 +1,3 @@
-declare const chrome: typeof browser; // Chrome vs Firefox compat
-
 /**
  * Watches for changes to the page and adds the Select Friends button to
  * the Invite menu

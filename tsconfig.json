@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "module": "nodenext",
+    "module": "esnext",
     "skipLibCheck": true,
     "strict": true,
     "isolatedModules": true,
     "erasableSyntaxOnly": true,
-    "types": ["firefox-webext-browser"],
+    "types": ["firefox-webext-browser", "chrome"],
     "outDir": "dist/unpacked"
   },
   "include": ["src/**/*"]
