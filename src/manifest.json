@@ -2,18 +2,27 @@
   "$schema": "https://www.schemastore.org/webextension",
   "manifest_version": 3,
   "name": "Friend Inviter",
-  "version": "1",
+  "version": "2",
   "author": "argonX",
-  "permissions": ["cookies", "webRequest"],
-  "host_permissions": ["https://*.fetlife.com/*"],
+  "permissions": [
+    "cookies",
+    "webRequest"
+  ],
+  "host_permissions": [
+    "https://*.fetlife.com/*"
+  ],
   "background": {
     "type": "module",
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["https://fetlife.com/events/*"],
-      "js": ["content.js"]
+      "matches": [
+        "https://fetlife.com/events/*"
+      ],
+      "js": [
+        "content.js"
+      ]
     }
   ],
   "browser_specific_settings": {
