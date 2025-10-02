@@ -4,16 +4,21 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "web-ext build -s src -a dist",
-    "check": "tsc && eslint . && web-ext lint -s src -a dist",
-    "dev": "web-ext run -s src -a dist"
+    "build": "tsc && cp src/manifest.json dist/unpacked/manifest.json",
+    "clean": "rm -rf dist",
+    "lint": "eslint src",
+    "pack": "web-ext build -s dist/unpacked -a dist",
+    "release": "./release.sh",
+    "typecheck": "tsc --noEmit",
+    "dev": "concurrently --kill-others 'tsc --watch' 'web-ext run -s dist/unpacked -t chromium'"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",
     "@types/firefox-webext-browser": "^120.0.4",
+    "concurrently": "^9.2.1",
     "eslint": "^9.35.0",
     "globals": "^16.4.0",
-    "typescript": "^5.9.2",
+    "typescript": "^5.9.3",
     "typescript-eslint": "^8.43.0",
     "web-ext": "^8.9.0"
   }

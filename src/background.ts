@@ -1,18 +1,10 @@
-/** @type {typeof globalThis.browser} */
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const browser = /** @type {any} */ (globalThis).chrome;
+declare const chrome: typeof browser; // Chrome vs Firefox compat
 
-/**
- * Utility that holds a value and tells its subscribers when the value changes
- * @template T
- */
-class Signal {
-  /** @type {T | undefined} */
-  #value;
-  /** @type {Set<(value: T | undefined) => void>} */
-  #subscriptions;
-  /** @param {T} [value] */
-  constructor(value) {
+/** Utility that holds a value and tells its subscribers when the value changes. */
+class Signal<T> {
+  #value: T | undefined;
+  #subscriptions: Set<(value: T | undefined) => void>;
+  constructor(value?: T) {
     this.#value = value;
     this.#subscriptions = new Set();
   }
@@ -28,29 +20,26 @@ class Signal {
       }
     }
   }
-  subscribe(/** @type {(value: T | undefined) => void} */ callback) {
+  subscribe(callback: (value: T | undefined) => void) {
     this.#subscriptions.add(callback);
     return () => this.#subscriptions.delete(callback);
   }
 }
 
-/** @type {Signal<string|undefined>} */
-const token = new Signal();
+const token: Signal<string | undefined> = new Signal();
 token.subscribe((value) => {
   console.log("Storing", value);
 });
 const decoder = new TextDecoder("utf-8");
 
 // Sniff requests to store authenticity token, used to make our own requests
-browser.webRequest.onBeforeRequest.addListener(
+chrome.webRequest.onBeforeRequest.addListener(
   (details) => {
-    /** @type {unknown} */
-    const buf = details.requestBody?.raw?.[0]?.bytes;
+    const buf: unknown = details.requestBody?.raw?.[0]?.bytes;
     if (buf instanceof ArrayBuffer) {
-      let str = decoder.decode(buf);
+      const str = decoder.decode(buf);
       try {
-        /** @type {unknown} */
-        const json = JSON.parse(str);
+        const json: unknown = JSON.parse(str);
         if (
           json &&
           typeof json === "object" &&
@@ -71,24 +60,18 @@ browser.webRequest.onBeforeRequest.addListener(
   ["requestBody"]
 );
 
-/**
- * @typedef MessageTokenSync
- * @property {'authenticity_token'} action
- * @property {'sync'} mode
- */
-/**
- * @typedef MessageTokenSubscribe
- * @property {'authenticity_token'} action
- * @property {'subscribe'} mode
- * @property {number} timeout
- */
+interface MessageTokenSync {
+  action: "authenticity_token";
+  mode: "sync";
+}
+interface MessageTokenSubscribe {
+  action: "authenticity_token";
+  mode: "subscribe";
+  timeout: number;
+}
 /** Send authenticity token when content script asks for it */
-browser.runtime.onMessage.addListener(
-  (
-    /** @type {MessageTokenSync|MessageTokenSubscribe} */ msg,
-    sender,
-    reply
-  ) => {
+chrome.runtime.onMessage.addListener(
+  (msg: MessageTokenSync | MessageTokenSubscribe, sender, reply) => {
     console.log("A message!", msg);
     switch (msg.mode) {
       case "sync": {
@@ -104,8 +87,7 @@ browser.runtime.onMessage.addListener(
           unsubscribe();
         });
 
-        /** @type {ReturnType<typeof setTimeout>} */
-        const timeout = setTimeout(() => {
+        const timeout: ReturnType<typeof setTimeout> = setTimeout(() => {
           console.log("Loading token timed out.");
           reply(undefined);
           unsubscribe();
@@ -114,7 +96,7 @@ browser.runtime.onMessage.addListener(
       }
       default: {
         throw new Error(
-          `Unimplemented mode: ${/** @type {{mode:string}} */ (msg).mode}`
+          `Unimplemented mode: ${(msg as { mode: string }).mode}`
         );
       }
     }

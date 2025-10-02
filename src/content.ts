@@ -1,6 +1,4 @@
-/** @type {typeof globalThis.browser} */
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const browser = /** @type {any} */ (globalThis).chrome;
+declare const chrome: typeof browser; // Chrome vs Firefox compat
 
 /**
  * Watches for changes to the page and adds the Select Friends button to
@@ -13,17 +11,14 @@ const modalCreationObserver = new MutationObserver((recs) => {
   console.log("Detected invite modal. Adding Select Friends button.");
 
   // Copy the "Invite" button to create the "Select Friends" button
-  const submit = inviteModal.querySelector("footer button");
+  const submit = inviteModal.querySelector<HTMLButtonElement>("footer button");
   if (!submit) {
     thralert('Could not find "Invite" button to enhance.');
   }
-  const container = /** @type {HTMLElement} */ (submit.parentElement);
-  const clonetainer = /** @type {typeof container} */ (
-    container.cloneNode(true)
-  );
-  const btn = /** @type {HTMLButtonElement} */ (
-    clonetainer.querySelector("button")
-  );
+  const container = submit.parentElement as HTMLElement;
+  const clonetainer = container.cloneNode(true) as HTMLElement;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const btn = clonetainer.querySelector<HTMLButtonElement>("button")!;
   btn.disabled = false;
   btn.className = "px-4"; // Tailwind util
   btn.textContent = "Select Friends";
@@ -41,32 +36,33 @@ async function selectFriends() {
   console.log("Select Friends button clicked");
   const user = getUser();
 
-  const modalBody = /** @type {HTMLDivElement} */ (
-    document.querySelector(
-      "div[id^=modal-][id$=-body]" // full ID is modal-<random>-body
-    )
-  );
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const modalBody = document.querySelector<HTMLDivElement>(
+    "div[id^=modal-][id$=-body]" // full ID is modal-<random>-body
+  )!;
 
   const listContainer = modalBody.querySelector('div[class=""]');
   if (!listContainer) {
     thralert("Could not find list of friends?");
   }
-  const strLimit = /** @type {string | null} */ (
-    modalBody.querySelector("h4")?.textContent
-  )?.match(/\d+/)?.[0];
-  if (typeof strLimit !== "string") {
-    thralert("Could not find number of remaining invites?");
-  }
-  let limit = Number(strLimit);
-  if (!limit) {
-    thralert("No remaining invites to add.");
+
+  const strLimit = modalBody.querySelector("h4")?.textContent.match(/\d+/)?.[0];
+  let limit = Infinity;
+  let shouldScroll = false;
+  if (typeof strLimit === "string") {
+    limit = Number(strLimit);
+    if (limit === 0) {
+      thralert("No remaining invites to add.");
+    } else if (Number.isNaN(limit)) {
+      thralert("Could not parse invite limit.");
+    }
+    shouldScroll = true;
   }
 
   const token = await getAuthenticityToken(user);
   let page = 1;
   let friends = await getFriendList(user, token, page);
-  /** @type {ReturnType<typeof setTimeout>} */
-  let noMutationsTimeout;
+  let noMutationsTimeout: ReturnType<typeof setTimeout>;
 
   /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
   NOTE: For "invitee" here, I mean every user in the potential invitee list,
@@ -101,7 +97,7 @@ async function selectFriends() {
   \* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
   /** @returns {Promise<'continue'|'done'|'new-friends'>} */
-  const checkState = async () => {
+  const checkState = async (): Promise<"continue" | "done" | "new-friends"> => {
     if (limit === 0) {
       return "done"; // Can't invite more people
     } else if (friends.list.size === 0) {
@@ -120,7 +116,7 @@ async function selectFriends() {
     return "continue";
   };
 
-  const loadInviteesIfNeeded = (/** @type {HTMLElement} */ lastInvitee) => {
+  const loadInviteesIfNeeded = (lastInvitee: HTMLElement) => {
     if (!friends.done) {
       console.log("Scrolling to load more invitees.");
       lastInvitee.scrollIntoView();
@@ -134,7 +130,7 @@ async function selectFriends() {
 
   const checkStatic = async () => {
     for (let i = 0; i < listContainer.childElementCount; i += 1) {
-      const label = /** @type {HTMLLabelElement} */ (listContainer.children[i]);
+      const label = listContainer.children[i] as HTMLLabelElement;
 
       const invitee = label.querySelector("a")?.title;
       if (!invitee) {
@@ -162,9 +158,12 @@ async function selectFriends() {
       }
     }
 
-    loadInviteesIfNeeded(
-      /** @type {HTMLElement} */ (listContainer.lastElementChild)
-    );
+    if (shouldScroll) {
+      console.log("Loading more invitee list.");
+      loadInviteesIfNeeded(listContainer.lastElementChild as HTMLElement);
+    } else {
+      console.log("Not in scrolling mode. Done!");
+    }
   };
 
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
@@ -197,9 +196,9 @@ async function selectFriends() {
         }
       }
       const lastRecord = recs.findLast((rec) => rec.addedNodes.length > 0);
-      const lastElement = /** @type {HTMLElement} */ (
-        lastRecord?.addedNodes.item(lastRecord.addedNodes.length - 1)
-      );
+      const lastElement = lastRecord?.addedNodes.item(
+        lastRecord.addedNodes.length - 1
+      ) as HTMLElement;
       loadInviteesIfNeeded(lastElement);
     }
   });
@@ -211,13 +210,10 @@ async function selectFriends() {
 
 // --- --- --- //
 
-/**
- * Watches changes on the page to see when the Invite menu pops up.
- * @param {MutationRecord[]} recs
- */
-function findInviteModal(recs) {
+/** Watches changes on the page to see when the Invite menu pops up. */
+function findInviteModal(recs: MutationRecord[]) {
   for (const rec of recs) {
-    for (const node of /** @type {Iterable<HTMLElement>} */ (rec.addedNodes)) {
+    for (const node of rec.addedNodes as Iterable<HTMLElement>) {
       if ("dataset" in node && node.dataset.test === "invite-to-event-modal") {
         return node;
       }
@@ -234,13 +230,11 @@ function findInviteModal(recs) {
  * @param {string} user
  * @returns {Promise<string>}
  */
-async function getAuthenticityToken(user) {
-  let token = await /** @type {Promise<string|undefined>} */ (
-    browser.runtime.sendMessage({
-      action: "authenticity_token",
-      mode: "sync",
-    })
-  );
+async function getAuthenticityToken(user: string): Promise<string> {
+  let token = (await chrome.runtime.sendMessage({
+    action: "authenticity_token",
+    mode: "sync",
+  })) as string | undefined;
   if (token) {
     return token;
   }
@@ -253,13 +247,11 @@ async function getAuthenticityToken(user) {
 
   try {
     document.body.appendChild(iframe);
-    token = await /** @type{Promise<string|undefined>} */ (
-      browser.runtime.sendMessage({
-        action: "authenticity_token",
-        mode: "subscribe",
-        timeout: 3000,
-      })
-    );
+    token = (await chrome.runtime.sendMessage({
+      action: "authenticity_token",
+      mode: "subscribe",
+      timeout: 3000,
+    })) as string | undefined;
     if (token) {
       return token;
     }
@@ -280,9 +272,10 @@ async function getAuthenticityToken(user) {
 
 /** Extracts your username from the nav bar, with a fall back to manual entry. */
 function getUser() {
-  /** @type {string|null|undefined} */
-  let user = /** @type {HTMLAnchorElement} */ (
-    document.body.querySelector("#sidebar-general a img")?.parentElement
+  let user: string | null | undefined = (
+    document.body.querySelector("#sidebar-general a img")?.parentElement as
+      | HTMLAnchorElement
+      | undefined
   )?.pathname.slice(1);
   if (!user) {
     user = prompt("Couldn't detect your username? Enter it manually...");
@@ -300,7 +293,7 @@ function getUser() {
  * @param {string} token Authenticity token
  * @param {number} page Which page of the friends list to get
  */
-async function getFriendList(user, token, page) {
+async function getFriendList(user: string, token: string, page: number) {
   const res = await fetch(`https://fetlife.com/${user}/relations`, {
     method: "POST",
     credentials: "include",
@@ -318,15 +311,14 @@ async function getFriendList(user, token, page) {
     }),
   });
 
-  /**
-   * @typedef FriendsData
-   * @property {string} [error]
-   * @property {{nickname:string}[]} [users]
-   * @property {boolean} no_more
-   */
-  const json = await /** @type {Promise<FriendsData>} */ (res.json()).catch(
-    () => undefined
-  );
+  interface FriendsData {
+    error?: string;
+    users?: { nickname: string }[];
+    no_more: boolean;
+  }
+  const json = (await res.json().catch(() => undefined)) as
+    | FriendsData
+    | undefined;
 
   if (!res.ok || !json || json.error) {
     const reason = res.ok
@@ -351,8 +343,8 @@ async function getFriendList(user, token, page) {
 // --- --- --- //
 
 /** @param {HTMLLabelElement} label  */
-function isInvited(label) {
-  return /** @type {HTMLInputElement} */ (label.querySelector("input")).checked;
+function isInvited(label: HTMLLabelElement) {
+  return label.querySelector<HTMLInputElement>("input")?.checked;
 }
 
 /**
@@ -360,7 +352,11 @@ function isInvited(label) {
  * @param {string} [detail]
  * @returns {never}
  */
-function thralert(display, detail = display, Ctor = Error) {
+function thralert(
+  display: string,
+  detail: string = display,
+  Ctor = Error
+): never {
   alert(display);
   throw new Ctor(detail);
 }
