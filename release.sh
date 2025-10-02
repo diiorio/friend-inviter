@@ -1,4 +1,5 @@
 #!/usr/bin/env zsh
+set -e
 
 if [ -n "$(git status --porcelain)" ]; then
     echo "Commit all changes before releasing."
