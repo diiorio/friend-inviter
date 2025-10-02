@@ -19,4 +19,4 @@ npm run pack
 git add "$MANIFEST"
 git commit -m "chore: bump version to v$VERSION"
 git push
-gh release create "v$VERSION" --generate-notes "dist/friend-inviter_$VERSION.zip"
+gh release create "v$VERSION" --generate-notes "dist/friend_inviter-$VERSION.zip"
