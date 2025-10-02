@@ -229,10 +229,10 @@ function findInviteModal(recs: MutationRecord[]) {
  * @returns {Promise<string>}
  */
 async function getAuthenticityToken(user: string): Promise<string> {
-  let token = (await chrome.runtime.sendMessage({
+  let token: string | undefined = await chrome.runtime.sendMessage({
     action: "authenticity_token",
     mode: "sync",
-  })) as string | undefined;
+  });
   if (token) {
     return token;
   }
@@ -245,11 +245,11 @@ async function getAuthenticityToken(user: string): Promise<string> {
 
   try {
     document.body.appendChild(iframe);
-    token = (await chrome.runtime.sendMessage({
+    token = await chrome.runtime.sendMessage({
       action: "authenticity_token",
       mode: "subscribe",
       timeout: 3000,
-    })) as string | undefined;
+    });
     if (token) {
       return token;
     }
